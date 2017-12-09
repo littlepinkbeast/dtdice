@@ -27,6 +27,35 @@ result = 0
 prelim = []
 kept_explosion = false
 
+# The core die-roller function. "nines" is boolean, and specifies whether nines explode.
+# "double" is also boolean, and specifies if a second explosion should be added.
+# For each die, returns the value of the die and whether or not that die exploded.
+
+def explode(nines, double)
+	dummy = (rand * 10).to_i + 1
+	if double then
+		if dummy == 10 || ((dummy == 9) && nines) then 
+			dummy += explode(nines, double) + explode(nines, double)
+		end
+	else
+		if dummy == 10 || ((dummy == 9) && nines) then 
+			dummy += explode(nines, double)
+		end
+	end
+	dummy
+end
+
+# Function for moving each member of an array one place to the left and moving the first element to the end
+
+def arrotate(victim)
+	dummy = victim[0]
+	(0..victim.size - 1).each do |i|
+		victim[i] = victim[i + 1]
+	end
+	victim[-1] = dummy
+	victim
+end
+
 begin
 	while continue do
 		clear
@@ -49,21 +78,21 @@ begin
 		setpos(options.size + 10, 5)
 		addstr("Up and down to select option, left and right to change value.")
 		setpos(options.size + 11, 5)
-		addstr("Press Enter to roll dice. Press Escape to exit.")
+		addstr("Press Space or Enter to roll dice. Press Escape to exit.")
 		user_input = getch
 		if user_input == 27 then #escape key
 			continue = false
 		elsif user_input == Key::LEFT
 			if menu_ptr <= 3 then
 				options[menu_ptr][1] -= 1
-				if options[menu_ptr][1] < 0 then options[menu_ptr][1] = 20 end
+				if options[menu_ptr][1] < 0 then options[menu_ptr][1] = 40 end
 			else
 				if options[menu_ptr][1] == false then options[menu_ptr][1] = true else options[menu_ptr][1] = false end
 			end
 		elsif user_input == Key::RIGHT
 			if menu_ptr <= 3 then
 				options[menu_ptr][1] += 1
-				if options[menu_ptr][1] > 20 then options[menu_ptr][1] = 0 end
+				if options[menu_ptr][1] > 40 then options[menu_ptr][1] = 0 end
 			else
 				if options[menu_ptr][1] == false then options[menu_ptr][1] = true else options[menu_ptr][1] = false end
 			end		
@@ -73,8 +102,73 @@ begin
 		elsif user_input == Key::DOWN
 			menu_ptr += 1
 			if menu_ptr >= options.size then menu_ptr = 0 end
-		elsif user_input == Key::ENTER
-		
+		elsif user_input == ' ' || user_input == 13
+# Biginneth heere much core logic
+			rolled = options[0][1]
+			kept = options[1][1]
+			flat_bonus = options[2][1]
+			target_number = options[3][1]
+			have_target = options[4][1]
+			nines_explode = options[5][1]
+			double_dice = options[6][1]
+			kept_explosion = false
+			prelim = []
+			result = 0
+			full_value = 0
+			
+			while (rolled > 11 && kept < 10) do
+				rolled -= 2
+				kept += 1
+			end
+
+			if kept >= 10 then
+				k_bonus = kept - 10
+				kept = 10
+				if rolled >= 10 then
+					r_bonus = rolled - 10
+					rolled = 10
+				end
+				flat_bonus += (k_bonus + r_bonus) * 5
+			end
+			
+			if rolled > 10 then rolled = 10 end
+			if (kept > rolled) then kept = rolled end
+
+			rolled.times do
+				prelim.push explode(nines_explode, double_dice)
+			end
+			prelim.sort!.reverse!
+
+			#calculate the maximum value of the roll, including all explosions
+			0.upto(kept-1) do |x| 
+				full_value += prelim[x]
+				kept_explosion = (kept_explosion || (prelim[x] >= 10))
+			end
+			if (have_target) then
+				# As far as I can tell, keeping more than one explosion doesn't make things worse, so if the target number
+				# can't be reached without explosions, use the full value with all explosions.
+				if (kept_explosion == true && prelim[kept * -1] < 10)then # make sure there's enough non-exploded dice to keep
+					while prelim[0] >= 10 do
+						prelim = arrotate(prelim)
+					end
+					kept_explosion = false
+					0.upto(kept-1) do |x| 
+						result += prelim[x]
+						kept_explosion = (kept_explosion || (prelim[x] >= 10))
+					end
+					result += flat_bonus
+					if result < target_number then
+						result = full_value + flat_bonus
+						kept_explosion = true
+					end
+				else
+					result = full_value + flat_bonus
+					kept_explosion = (prelim[0] >= 10)
+				end
+			else #normal roll
+				result = full_value + flat_bonus
+			end			
+			
 		end
 	end
 ensure
