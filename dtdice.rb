@@ -56,7 +56,6 @@ if rolled > 10 then rolled = 10 end
 
 # The core die-roller function. "nines" is boolean, and specifies whether nines explode.
 # "double" is also boolean, and specifies if a second explosion should be added.
-# For each die, returns the value of the die and whether or not that die exploded.
 
 def explode(nines, double)
 	dummy = (rand * 10).to_i + 1
