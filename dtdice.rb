@@ -3,6 +3,7 @@
 # Advanced invocation example: "dtdice 10 5 x t25 q"
 # Option Flags
 # a## - Add a flat bonus. ## will be added to the total of the roll.
+# d - Double exploding dice. Each die that explodes gets two dice added instead of one.
 # n - No explosions. Report the highest value possible without keeping explosions, unless there are more explosions than
 # discarded dice
 # q - Quiet mode. Only report the total, not the individual die rolls.
@@ -19,6 +20,7 @@ verbose = false
 target_number = 0
 kept_explosion = false
 flat_bonus = 0
+double_dice = false
 
 r, k, *options = ARGV
 rolled = r.to_i
@@ -53,12 +55,14 @@ end
 if rolled > 10 then rolled = 10 end
 
 # The core die-roller function. "nines" is boolean, and specifies whether nines explode.
-# FOr each die, returns the value of the die and whether or not that die exploded.
+# "double" is also boolean, and specifies if a second explosion should be added.
+# For each die, returns the value of the die and whether or not that die exploded.
 
-def explode(nines)
+def explode(nines, double)
+	dbl_mult = double ? 1 : 0
 	dummy = (rand * 10).to_i + 1
 	if dummy == 10 || ((dummy == 9) && nines) then 
-		dummy += explode(nines)
+		dummy += explode(nines, double) + dbl_mult * explode(nines, double)
 	end
 	dummy
 end
@@ -90,6 +94,8 @@ options.each do |o|
 		if flat_bonus == 0 then puts "Flat bonus argument found, but evaluated to 0. Check your typing." end
 	elsif o[0] == 'v' then
 		verbose = true
+	elsif o[0] == 'd' then
+		double_dice = true
 	else
 		puts "Invalid option:" + o.to_s
 	end
@@ -101,6 +107,7 @@ if verbose then
 	puts "Avoid explosions: " + avoid_explosions.to_s
 	puts "Quiet mode: " + quiet_mode.to_s
 	puts "Nines explode: " + nines_explode.to_s
+	puts "Double explosions: " + double_dice.to_s
 	puts "Try to reach target: " + have_target.to_s
 	puts "Target number: " + target_number.to_s
 	puts "Adding " + flat_bonus.to_s + " to the result."
@@ -110,7 +117,7 @@ if (kept > rolled) then kept = rolled end
 
 prelim = Array.new
 rolled.times do
-	prelim.push explode(nines_explode)
+	prelim.push explode(nines_explode, double_dice)
 end
 prelim.sort!.reverse!
 
