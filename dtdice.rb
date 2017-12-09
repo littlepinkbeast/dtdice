@@ -72,17 +72,6 @@ def explode(nines, double)
 	dummy
 end
 
-# Function for moving each member of an array one place to the left and moving the first element to the end
-
-def arrotate(victim)
-	dummy = victim[0]
-	(0..victim.size - 1).each do |i|
-		victim[i] = victim[i + 1]
-	end
-	victim[-1] = dummy
-	victim
-end
-
 options.each do |o|
 	if o[0] == 'n' then
 		avoid_explosions = true
@@ -138,7 +127,7 @@ if (have_target || avoid_explosions) then
 	# be reached without explosions, use the full value with all explosions.
 	if (kept_explosion == true && prelim[kept * -1] < 10)then # make sure there's enough non-exploded dice to keep
 		while prelim[0] >= 10 do
-			prelim = arrotate(prelim)
+			prelim.push(prelim.shift)
 		end
 		kept_explosion = false
 		0.upto(kept-1) do |x| 
