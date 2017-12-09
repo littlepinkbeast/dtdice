@@ -59,10 +59,15 @@ if rolled > 10 then rolled = 10 end
 # For each die, returns the value of the die and whether or not that die exploded.
 
 def explode(nines, double)
-	dbl_mult = double ? 1 : 0
 	dummy = (rand * 10).to_i + 1
-	if dummy == 10 || ((dummy == 9) && nines) then 
-		dummy += explode(nines, double) + dbl_mult * explode(nines, double)
+	if double then
+		if dummy == 10 || ((dummy == 9) && nines) then 
+			dummy += explode(nines, double) + explode(nines, double)
+		end
+	else
+		if dummy == 10 || ((dummy == 9) && nines) then 
+			dummy += explode(nines, double)
+		end
 	end
 	dummy
 end
