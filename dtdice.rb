@@ -84,8 +84,10 @@ options.each do |o|
 	elsif o[0] == 't' then
 		have_target = true
 		target_number = o[1..o.length - 1].to_i
+		if target_number == 0 then puts "Target number argument found, but evaluated to 0. Check your typing." end
 	elsif o[0] == 'a' then
 		flat_bonus = o[1..o.length - 1].to_i
+		if flat_bonus == 0 then puts "Flat bonus argument found, but evaluated to 0. Check your typing." end
 	elsif o[0] == 'v' then
 		verbose = true
 	else
@@ -144,6 +146,9 @@ else #normal roll
 	result = full_value + flat_bonus
 end
 if (quiet_mode == false) then
+	if target_number > 0 then
+		puts "Target number: " + target_number.to_s
+	end
 	prelim.each do |i|
 		print i.to_s + " "
 	end
