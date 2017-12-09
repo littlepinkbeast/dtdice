@@ -6,7 +6,7 @@
 # n - No explosions. Report the highest value possible without keeping explosions, unless there are more explosions than
 # discarded dice
 # q - Quiet mode. Only report the total, not the individual die rolls.
-# t## - Target. Keep explosions only if necessary to reach ##, or if there is no other option.
+# t## - Target. Keep explosions only if necessary to reach ##, or if there is no other option. Supersedes n.
 # v - Verbose. Print debugging information.
 # x - Extra explosions. Dice explode on nines as well as tens.
 
@@ -56,13 +56,22 @@ if rolled > 10 then rolled = 10 end
 # FOr each die, returns the value of the die and whether or not that die exploded.
 
 def explode(nines)
-	bang = false
 	dummy = (rand * 10).to_i + 1
 	if dummy == 10 || ((dummy == 9) && nines) then 
-		bang = true
-		dummy += explode(nines)[0]
+		dummy += explode(nines)
 	end
-	return dummy, bang
+	dummy
+end
+
+# Function for moving each member of an array one place to the left and moving the first element to the end
+
+def arrotate(victim)
+	dummy = victim[0]
+	(0..victim.size - 1).each do |i|
+		victim[i] = victim[i + 1]
+	end
+	victim[-1] = dummy
+	victim
 end
 
 options.each do |o|
@@ -99,18 +108,45 @@ if (kept > rolled) then kept = rolled end
 
 prelim = Array.new
 rolled.times do
-	res, popped = explode(nines_explode)
-	kept_explosion = (kept_explosion || popped)
-	prelim.push [res, popped]
+	prelim.push explode(nines_explode)
 end
 prelim.sort!.reverse!
+
+full_value = 0
+result = 0
+#calculate the maximum value of the roll, including all explosions
+0.upto(kept-1) do |x| 
+	full_value += prelim[x]
+	kept_explosion = (kept_explosion || (prelim[x] >= 10))
+end
+if (have_target || avoid_explosions) then
+	# As far as I can tell, keeping more than one explosion doesn't make things worse, so if the target number can't
+	# be reached without explosions, use the full value with all explosions.
+	if (kept_explosion == true && prelim[kept * -1] < 10)then # make sure there's enough non-exploded dice to keep
+		while prelim[0] >= 10 do
+			prelim = arrotate(prelim)
+		end
+		kept_explosion = false
+		0.upto(kept-1) do |x| 
+			result += prelim[x]
+			kept_explosion = (kept_explosion || (prelim[x] >= 10))
+		end
+		result += flat_bonus
+		if result < target_number then
+			result = full_value + flat_bonus
+			kept_explosion = true
+		end
+	else
+		result = full_value + flat_bonus
+		kept_explosion = true
+	end
+else #normal roll
+	result = full_value + flat_bonus
+end
 if (quiet_mode == false) then
 	prelim.each do |i|
-		print i[0].to_s + " "
+		print i.to_s + " "
 	end
 	print "\n"
 end
-result = 0
-0.upto(kept-1) { |x| result += prelim[x][0]}
-result += flat_bonus
 puts result.to_s + ": " + kept_explosion.to_s
