@@ -138,7 +138,7 @@ if (have_target || avoid_explosions) then
 		end
 	else
 		result = full_value + flat_bonus
-		kept_explosion = true
+		kept_explosion = (prelim[0] >= 10)
 	end
 else #normal roll
 	result = full_value + flat_bonus
@@ -149,4 +149,10 @@ if (quiet_mode == false) then
 	end
 	print "\n"
 end
-puts result.to_s + ": " + kept_explosion.to_s
+print result.to_s
+if kept_explosion then 
+	print " (Includes exploded dice.)" 
+else
+	print " (No explosions.)"
+end
+print "\n"
